@@ -1,0 +1,29 @@
+{
+  "name": "ebml-varint",
+  "version": "1.0.0",
+  "description": "EBML variable size integer encoding and decoding",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kapetan/ebml-varint.git"
+  },
+  "keywords": [
+    "ebml",
+    "varint",
+    "vint",
+    "variable",
+    "size",
+    "integer"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kapetan/ebml-varint/issues"
+  },
+  "homepage": "https://github.com/kapetan/ebml-varint#readme",
+  "devDependencies": {
+    "tape": "^4.6.2"
+  }
+}
