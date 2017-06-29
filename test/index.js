@@ -1,6 +1,7 @@
 var test = require('tape');
 
-var varint = require('../');
+// var varint = require('../');
+var varint = require('../wasm');
 
 var buffer = function() {
   var args = Array.prototype.slice.call(arguments);

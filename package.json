@@ -24,6 +24,10 @@
   },
   "homepage": "https://github.com/kapetan/ebml-varint#readme",
   "devDependencies": {
+    "benchmark": "^2.1.4",
     "tape": "^4.6.2"
+  },
+  "dependencies": {
+    "base64-to-uint8array": "^1.0.0"
   }
 }
