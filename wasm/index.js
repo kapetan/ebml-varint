@@ -3,49 +3,63 @@ var fs = require('fs');
 
 var WASM = toUint8Array(fs.readFileSync(__dirname + '/index.wasm', 'base64'));
 var MAX = Math.pow(2, 53) - 1;
+var PADDING = 9;
 
-var instance = new WebAssembly.Instance(new WebAssembly.Module(WASM));
+var instance = new WebAssembly.Instance(new WebAssembly.Module(WASM), {
+  console: { log: function(i) { console.log('wasm:', i) } }
+});
 var memory = new Uint8Array(instance.exports.memory.buffer);
 
-var copy = function(source, target, targetStart, sourceStart, sourceEnd) {
-  var length = sourceEnd - sourceStart;
-  for(var i = 0; i < length; i++) {
-    target[targetStart + i] = source[sourceStart + i];
+var copy = function(source, target, targetStart, sourceStart, length, pad) {
+  var len = length + (pad ? PADDING : 0);
+  for(var i = 0; i < len; i++) {
+    target[targetStart + i] = i < length ? source[sourceStart - i] : 0;
   }
-};
-
-var errno = function(no, err) {
-  if(instance.exports.errno() === no) throw err;
 };
 
 var checkEncode = function(obj) {
   if(typeof obj !== 'number') throw new TypeError('value must be a number');
-  if(obj < -1 || obj > MAX) throw new RangeError('value must be a non-negative safe integer');
+  if(obj < 0 || obj > MAX) throw new RangeError('value must be a non-negative safe integer');
 };
 
 var checkDecode = function(start, end) {
   if(start >= end) throw new RangeError('start must be within bounds');
 };
 
+var checkErrno = function() {
+  var errno = instance.exports.errno();
+  if(errno === instance.exports.EMARKER) throw new RangeError('var int marker must be within max byte range');
+  if(errno === instance.exports.ELENGTH) throw new RangeError('var int length must be within bounds');
+};
+
 module.exports = exports = {
   encode: function(obj, buffer, offset) {
     checkEncode(obj);
 
-    var length = obj === -1 ? 1 : instance.exports.encode(obj);
+    var length = instance.exports.encode(obj);
 
     if(!buffer) buffer = new Buffer(length);
     if(!offset) offset = 0;
 
     exports.encode.bytes = length;
-    if(obj === -1) buffer[offset] = 0xff;
-    else copy(memory, buffer, offset, 0, length);
+    copy(memory, buffer, offset, length - 1, length, false);
     return buffer;
   },
   decode: function(buffer, start, end) {
+    if(!start) start = 0;
+    if(!end) end = buffer.length;
 
+    checkDecode(start, end);
+
+    var length = end - start;
+    copy(buffer, memory, 0, end - 1, length, true);
+    var n = instance.exports.decode(length - 1);
+    exports.decode.bytes = instance.exports.decodingLength(length - 1);
+
+    checkErrno();
+    return n;
   },
   encodingLength: function(obj) {
-    if(obj === -1) return 1;
     checkEncode(obj);
     return instance.exports.encodingLength(obj);
   },
@@ -56,11 +70,10 @@ module.exports = exports = {
     checkDecode(start, end);
 
     var length = end - start;
-    copy(buffer, memory, start, 0, length);
-    length = instance.exports.decodingLength(length);
+    copy(buffer, memory, 0, end - 1, length, true);
+    length = instance.exports.decodingLength(length - 1);
 
-    errno('EMARKER', new RangeError('var int marker must be within max byte range'));
-
+    checkErrno();
     return length;
   }
 };

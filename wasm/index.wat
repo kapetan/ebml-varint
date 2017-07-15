@@ -1,6 +1,8 @@
 (module
+  (func $log (import "console" "log") (param f64))
+
   (global $errno (mut i32) (i32.const 0))
-  ;;(global $ENEGATIVE (export "ENEGATIVE") i32 (i32.const 1))
+  (global $ELENGTH (export "ELENGTH") i32 (i32.const 1))
   (global $EMARKER (export "EMARKER") i32 (i32.const 2))
 
   (memory (export "memory") 1)
@@ -15,43 +17,37 @@
   )
 
   (func (export "encodingLength") (param $int f64) (result f64)
-    call $rerrno
-
-    ;;get_local $int
-    ;;f64.const 0
-    ;;f64.lt
-    ;;if (result f64)
-    ;;  get_global $ENEGATIVE
-    ;;  set_global $errno
-    ;;  f64.const 0
-    ;;else
-      get_local $int
-      i64.trunc_u/f64
-      call $encodingLength
-      f64.convert_u/i64
-    ;;end
+    get_local $int
+    i64.trunc_u/f64
+    call $encodingLength
+    f64.convert_u/i64
   )
 
-  (func (export "decodingLength") (param $int f64) (result f64)
-    call $rerrno
-
-    get_local $int
+  (func (export "decodingLength") (param $i f64) (result f64)
+    get_local $i
     i64.trunc_u/f64
     call $decodingLength
     f64.convert_u/i64
   )
 
   (func (export "encode") (param $int f64) (result f64)
-    call $rerrno
-
     get_local $int
     i64.trunc_u/f64
     call $encode
     f64.convert_u/i64
   )
 
+  (func (export "decode") (param $i f64) (result f64)
+    get_local $i
+    i64.trunc_u/f64
+    call $decode
+    f64.convert_u/i64
+  )
+
   (func $encodingLength (param $int i64) (result i64)
     (local $i i64)
+
+    call $rerrno
 
     block $return
       i64.const 1
@@ -83,18 +79,14 @@
     get_local $i
   )
 
-  (func $decodingLength (param $end i64) (result i64)
+  (func $decodingLength (param $i i64) (result i64)
     (local $length i64)
-    (local $i i64)
     (local $b i64)
 
     call $rerrno
 
     i64.const 1
     set_local $length
-
-    i64.const 0
-    set_local $i
 
     block $return
       loop $loop
@@ -116,11 +108,11 @@
 
         get_local $i
         i64.const 1
-        i64.add
+        i64.sub
         tee_local $i
 
-        get_local $end
-        i64.lt_u
+        i64.const 0
+        i64.ge_s
         br_if $loop
       end
 
@@ -133,84 +125,112 @@
 
   (func $encode (param $int i64) (result i64)
     (local $length i64)
-    (local $marker i64)
-    (local $i i64)
-    (local $mul i64)
+
+    call $rerrno
 
     get_local $int
     call $encodingLength
     set_local $length
 
-    get_local $int
-    i64.const 2
-    i64.const 7
+    ;;get_local $int
+    ;;i64.const 2
+    ;;i64.const 7
+    ;;get_local $length
+    ;;i64.mul
+    ;;i64.shl
+    ;;i64.const 1
+    ;;i64.sub
+    ;;i64.eq
+    ;;if
+    ;;  get_local $length
+    ;;  i64.const 1
+    ;;  i64.add
+    ;;  set_local $length
+    ;;end
+
+    i32.const 8
+
     get_local $length
-    i64.mul
-    i64.shl
-    i64.const 1
-    i64.sub
+    i64.const 9
     i64.eq
-    if
+    if (result i32)
+      i32.const 0x80
+    else
+      i32.const 0
+    end
+
+    i32.store8
+
+    i32.const 0
+
+    get_local $int
+
+    get_local $length
+    i64.const 9
+    i64.eq
+    if (result i64)
+      i64.const 0
+    else
+      i64.const 0x80
       get_local $length
       i64.const 1
-      i64.add
-      set_local $length
+      i64.sub
+      i64.const 7
+      i64.mul
+      i64.shl
     end
 
-    get_local $length
-    i64.const 1
-    i64.sub
-    i64.const 8
-    i64.div_u
-    set_local $marker
+    i64.or
+    i64.store
 
     get_local $length
-    i64.const 1
-    i64.sub
-    set_local $i
+  )
 
-    i64.const 1
-    set_local $mul
+  (func $decode (param $i i64) (result i64)
+    (local $length i64)
+    (local $start i64)
+    (local $int i64)
 
-    loop $loop
+    call $rerrno
+
+    block $return
       get_local $i
-      i32.wrap/i64
+      call $decodingLength
+      set_local $length
 
-      get_local $int
-      get_local $mul
-      i64.div_u
-
-      get_local $marker
-      get_local $i
-      i64.eq
-      if (result i64)
-        i64.const 0x80
-        get_local $length
-        i64.const 1
-        i64.sub
-        i64.shr_u
-      else
-        i64.const 0
-      end
-
-      i64.or
-      i64.store8
-
-      get_local $mul
-      i64.const 0x100
-      i64.mul
-      set_local $mul
+      get_global $errno
+      br_if $return
 
       get_local $i
+      get_local $length
       i64.const 1
       i64.sub
-      tee_local $i
-
+      i64.sub
+      tee_local $start
       i64.const 0
-      i64.ge_s
-      br_if $loop
+      i64.lt_s
+      if
+        get_global $ELENGTH
+        set_global $errno
+        br $return
+      end
+
+      get_local $start
+      i32.wrap/i64
+
+      i64.load
+
+      i64.const 0x80
+      get_local $length
+      i64.const 1
+      i64.sub
+      i64.const 7
+      i64.mul
+      i64.shl
+      i64.xor
+      set_local $int
     end
 
-    get_local $length
+    get_local $int
   )
 )
