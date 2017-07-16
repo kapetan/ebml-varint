@@ -16,9 +16,10 @@
     set_global $errno
   )
 
-  (func (export "encodingLength") (param $int f64) (result f64)
+  (func (export "encodingLength") (param $int f64) (param $esc i32) (result f64)
     get_local $int
     i64.trunc_u/f64
+    get_local $esc
     call $encodingLength
     f64.convert_u/i64
   )
@@ -30,9 +31,10 @@
     f64.convert_u/i64
   )
 
-  (func (export "encode") (param $int f64) (result f64)
+  (func (export "encode") (param $int f64) (param $esc i32) (result f64)
     get_local $int
     i64.trunc_u/f64
+    get_local $esc
     call $encode
     f64.convert_u/i64
   )
@@ -44,7 +46,7 @@
     f64.convert_u/i64
   )
 
-  (func $encodingLength (param $int i64) (result i64)
+  (func $encodingLength (param $int i64) (param $esc i32) (result i64)
     (local $i i64)
 
     call $rerrno
@@ -73,6 +75,25 @@
         i64.const 8
         i64.lt_u
         br_if $loop
+      end
+    end
+
+    get_local $esc
+    if
+      get_local $int
+      i64.const 1
+      i64.const 7
+      get_local $i
+      i64.mul
+      i64.shl
+      i64.const 1
+      i64.sub
+      i64.eq
+      if
+        get_local $i
+        i64.const 1
+        i64.add
+        set_local $i
       end
     end
 
@@ -123,30 +144,15 @@
     get_local $length
   )
 
-  (func $encode (param $int i64) (result i64)
+  (func $encode (param $int i64) (param $esc i32) (result i64)
     (local $length i64)
 
     call $rerrno
 
     get_local $int
+    get_local $esc
     call $encodingLength
     set_local $length
-
-    ;;get_local $int
-    ;;i64.const 2
-    ;;i64.const 7
-    ;;get_local $length
-    ;;i64.mul
-    ;;i64.shl
-    ;;i64.const 1
-    ;;i64.sub
-    ;;i64.eq
-    ;;if
-    ;;  get_local $length
-    ;;  i64.const 1
-    ;;  i64.add
-    ;;  set_local $length
-    ;;end
 
     i32.const 8
 

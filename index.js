@@ -4,11 +4,17 @@ var encodingLength = function(obj, escape) {
   if(typeof obj !== 'number') throw new TypeError('value must be a number');
   if(obj < 0 || obj > MAX) throw new RangeError('value must be a non-negative safe integer');
 
+  var length = 8;
+
   for(var i = 1; i <= 7; i++) {
-    if(obj < Math.pow(2, 7 * i)) return i;
+    if(obj < Math.pow(2, 7 * i)) {
+      length = i;
+      break;
+    }
   }
 
-  return 8;
+  if(escape && obj === Math.pow(2, 7 * length) - 1) length++;
+  return length;
 };
 
 var decodingLength = function(buffer, start, end) {
@@ -34,10 +40,8 @@ var decodingLength = function(buffer, start, end) {
 };
 
 module.exports = exports = {
-  encode: function(obj, buffer, offset) {
-    var length = encodingLength(obj);
-
-    // else if(obj === Math.pow(2, 7 * length) - 1) length++;
+  encode: function(obj, buffer, offset, escape) {
+    var length = encodingLength(obj, escape);
 
     if(!buffer) buffer = new Buffer(length);
     if(!offset) offset = 0;

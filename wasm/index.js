@@ -33,10 +33,10 @@ var checkErrno = function() {
 };
 
 module.exports = exports = {
-  encode: function(obj, buffer, offset) {
+  encode: function(obj, buffer, offset, escape) {
     checkEncode(obj);
 
-    var length = instance.exports.encode(obj);
+    var length = instance.exports.encode(obj, escape ? 1 : 0);
 
     if(!buffer) buffer = new Buffer(length);
     if(!offset) offset = 0;
@@ -59,9 +59,9 @@ module.exports = exports = {
     checkErrno();
     return n;
   },
-  encodingLength: function(obj) {
+  encodingLength: function(obj, escape) {
     checkEncode(obj);
-    return instance.exports.encodingLength(obj);
+    return instance.exports.encodingLength(obj, escape ? 1 : 0);
   },
   decodingLength: function(buffer, start, end) {
     if(!start) start = 0;

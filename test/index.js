@@ -1,7 +1,7 @@
 var test = require('tape');
 
-var varint = require('../');
-// var varint = require('../wasm');
+// var varint = require('../');
+var varint = require('../wasm');
 
 var buffer = function() {
   var args = Array.prototype.slice.call(arguments);
@@ -187,6 +187,24 @@ test('decode zero-padded int', function(t) {
   t.equals(result, Math.pow(2, 53) - 1);
   t.equals(varint.decode.bytes, 10);
   t.equals(varint.decodingLength(buf), 10);
+
+  t.end();
+});
+
+test('all ones with escape', function(t) {
+  var i = Math.pow(2, 14) - 1;
+  var buf = buffer(0b00100000, 0b00111111, 0b11111111);
+  var result = varint.encode(i, null, 0, true);
+
+  t.deepEquals(result, buf);
+  t.equals(varint.encode.bytes, 3);
+  t.equals(varint.encodingLength(i, true), 3);
+
+  result = varint.decode(result);
+
+  t.equals(result, i);
+  t.equals(varint.decode.bytes, 3);
+  t.equals(varint.decodingLength(buf), 3);
 
   t.end();
 });
