@@ -24,11 +24,9 @@
     f64.convert_u/i64
   )
 
-  (func (export "decodingLength") (param $i f64) (result f64)
+  (func (export "decodingLength") (param $i i32) (result i32)
     get_local $i
-    i64.trunc_u/f64
     call $decodingLength
-    f64.convert_u/i64
   )
 
   (func (export "encode") (param $int f64) (param $esc i32) (result f64)
@@ -39,9 +37,8 @@
     f64.convert_u/i64
   )
 
-  (func (export "decode") (param $i f64) (result f64)
+  (func (export "decode") (param $i i32) (result f64)
     get_local $i
-    i64.trunc_u/f64
     call $decode
     f64.convert_u/i64
   )
@@ -100,40 +97,39 @@
     get_local $i
   )
 
-  (func $decodingLength (param $i i64) (result i64)
-    (local $length i64)
-    (local $b i64)
+  (func $decodingLength (param $i i32) (result i32)
+    (local $length i32)
+    (local $b i32)
 
     call $rerrno
 
-    i64.const 1
+    i32.const 1
     set_local $length
 
     block $return
       loop $loop
         get_local $i
-        i32.wrap/i64
-        i64.load8_u
+        i32.load8_u
         tee_local $b
-        i64.clz
-        i64.const 56
-        i64.sub
+        i32.clz
+        i32.const 24
+        i32.sub
         get_local $length
-        i64.add
+        i32.add
         set_local $length
 
         get_local $b
-        i64.const 0
-        i64.ne
+        i32.const 0
+        i32.ne
         br_if $return
 
         get_local $i
-        i64.const 1
-        i64.sub
+        i32.const 1
+        i32.sub
         tee_local $i
 
-        i64.const 0
-        i64.ge_s
+        i32.const 0
+        i32.ge_s
         br_if $loop
       end
 
@@ -192,9 +188,9 @@
     get_local $length
   )
 
-  (func $decode (param $i i64) (result i64)
-    (local $length i64)
-    (local $start i64)
+  (func $decode (param $i i32) (result i64)
+    (local $length i32)
+    (local $start i32)
     (local $int i64)
 
     call $rerrno
@@ -209,12 +205,12 @@
 
       get_local $i
       get_local $length
-      i64.const 1
-      i64.sub
-      i64.sub
+      i32.const 1
+      i32.sub
+      i32.sub
       tee_local $start
-      i64.const 0
-      i64.lt_s
+      i32.const 0
+      i32.lt_s
       if
         get_global $ELENGTH
         set_global $errno
@@ -222,12 +218,11 @@
       end
 
       get_local $start
-      i32.wrap/i64
-
       i64.load
 
       i64.const 0x80
       get_local $length
+      i64.extend_u/i32
       i64.const 1
       i64.sub
       i64.const 7

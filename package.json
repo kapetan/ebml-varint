@@ -4,7 +4,8 @@
   "description": "EBML variable size integer encoding and decoding",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/index.js"
+    "test": "tape test/index.js",
+    "benchmark": "node test/benchmark.js"
   },
   "repository": {
     "type": "git",
